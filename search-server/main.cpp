@@ -68,9 +68,9 @@ public:
         document_count_++; 
         const vector<string> words = SplitIntoWordsNoStop(document);
         int doc_words_num = words.size();
-        
+        double one_word_freq = 1. / doc_words_num; 
         for (auto word : words) {
-            word_to_document_freqs_[word][document_id] += 1. / doc_words_num;
+            word_to_document_freqs_[word][document_id] += one_word_freq;
         } 
     }
  
@@ -129,7 +129,7 @@ private:
         return query_words;
     }
 
-    double IdfFormula(int all_docs, int doc_words) {
+    double CalculateIdf(int all_docs, int doc_words) {
         return log (static_cast<double>(all_docs) / doc_words); 
     }
 
@@ -146,7 +146,7 @@ private:
                 if (doc_to_tf.size() == document_count_) {
                     idf = 0;
                 } else {
-                    idf = IdfFormula(document_count_, doc_to_tf.size());
+                    idf = CalculateIdf(document_count_, doc_to_tf.size());
                 }
                 for (const auto& [id, tf] : doc_to_tf) { 
                     if (doc_to_tf.count(id) > 0) {
