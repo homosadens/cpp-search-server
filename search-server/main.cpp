@@ -67,14 +67,10 @@ public:
     void AddDocument(int document_id, const string& document) {
         document_count_++; 
         const vector<string> words = SplitIntoWordsNoStop(document);
-        int n = words.size();
+        int doc_words_num = words.size();
         
         for (auto word : words) {
-            if (word_to_document_freqs_.count(word) == 0) {
-                word_to_document_freqs_[word].insert({document_id, 1. / n});
-            } else {
-                word_to_document_freqs_[word][document_id] += 1. / n;
-            }
+            word_to_document_freqs_[word][document_id] += 1. / doc_words_num;
         } 
     }
  
@@ -133,6 +129,10 @@ private:
         return query_words;
     }
 
+    double IdfFormula(int all_docs, int doc_words) {
+        return log (static_cast<double>(all_docs) / doc_words); 
+    }
+
     //Возвращает вектор документов, содержащих плюс-слова и не содержащих минус-слова.
     //Для каждого документа из возвращаемого вектора вычисляется релевантность по формуле TF-IDF
     vector<Document> FindAllDocuments(const Query& query_words) const {
@@ -146,8 +146,7 @@ private:
                 if (doc_to_tf.size() == document_count_) {
                     idf = 0;
                 } else {
-                    double x = static_cast<double>(document_count_) / doc_to_tf.size();
-                    idf = log(x);
+                    idf = IdfFormula(document_count_, doc_to_tf.size());
                 }
                 for (const auto& [id, tf] : doc_to_tf) { 
                     if (doc_to_tf.count(id) > 0) {
