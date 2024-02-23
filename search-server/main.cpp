@@ -1,4 +1,3 @@
-/* Решение из урока №3 (на основе optional) */
 #include <algorithm>
 #include <cmath>
 #include <iostream>
