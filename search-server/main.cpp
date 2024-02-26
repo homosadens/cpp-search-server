@@ -1,3 +1,5 @@
+//я пыталась связаться с вами в пачке, но не получила ответа, поэтому оставлю комментарий в коде насчет спорного момента.
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -80,7 +82,7 @@ public:
     template <typename StringContainer>
     explicit SearchServer(const StringContainer& stop_words)
         : stop_words_(MakeUniqueNonEmptyStrings(stop_words)) {
-                if (!all_of(stop_words_.begin(), stop_words_.end(), [](const string& str) {return !HasInvalidChar(str);})) {
+                if (!all_of(stop_words_.begin(), stop_words_.end(), HasNotInvalidChar)) {
                     throw invalid_argument("invalid characters"s);
                 } 
         }
@@ -97,7 +99,7 @@ public:
         if (documents_.contains(document_id)) {
             throw invalid_argument("already contains this document id"s);
         } 
-        if (HasInvalidChar(document)) {
+        if (!HasNotInvalidChar(document)) {
             throw invalid_argument("invalid characters"s);
         }
         const vector<string> words = SplitIntoWordsNoStop(document);
@@ -147,9 +149,8 @@ public:
     int GetDocumentId(int index) const {
         if (index < 0 || index > documents_.size()) {
             throw out_of_range("index out of range"s);
-        } else {
-            return id_documents_[index];
         }
+        return id_documents_[index];
     }
  
     tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query, int document_id) const {
@@ -193,9 +194,9 @@ private:
     vector<string> SplitIntoWordsNoStop(const string& text) const {
             vector<string> words;
             for (const string& word : SplitIntoWords(text)) {
-                if (HasInvalidChar(word)) {
+                if (!HasNotInvalidChar(word)) {
                     string error_msg = "invalid characters"s + word;
-                    throw invalid_argument("invalid characters"s);
+                    throw invalid_argument(error_msg);
                 }
                 if (!IsStopWord(word)) {
                     words.push_back(word);
@@ -225,6 +226,9 @@ private:
     QueryWord ParseQueryWord(string text) const {
         bool is_minus = false;
         // Word shouldn't be empty
+        if (!IsValidWord(text)) {
+            throw invalid_argument("invalid query"s);
+        }
         if (text[0] == '-') {
             is_minus = true;
             text = text.substr(1);
@@ -236,21 +240,19 @@ private:
         set<string> plus_words;
         set<string> minus_words;
     };
- 
+
+//было замечание, что в ParseQuery нет проверки запроса на спец символы. Но она у меня находится в методе SplitIntoWordsNoStop, потому я сочла, что второй раз проверять в ParseQuery то же самое не имеет смыла.
+
     Query ParseQuery(const string& text) const {
        Query query;
         for (const string& word : SplitIntoWordsNoStop(text)) {
             const QueryWord query_word = ParseQueryWord(word);
-            if (IsValidWord(word)) {
                 if (query_word.is_minus) {
                     query.minus_words.insert(query_word.data);       
                 } else {
                     query.plus_words.insert(query_word.data);   
-                }
-            } else {
-                throw invalid_argument("invalid query"s);
+                } 
             }
-        }
         return query;
     }
  
@@ -292,29 +294,16 @@ private:
         return matched_documents;
     }
  
-    static bool HasInvalidChar(const string& word) {
-        // A valid word must not contain special characters
-        return !none_of(word.begin(), word.end(), [](char c) {
+    static bool HasNotInvalidChar(const string& word) {
+        return none_of(word.begin(), word.end(), [](char c) {
             return c >= '\0' && c < ' ';
             });
     }
  
     static bool IsValidWord(const string& word) {
-     switch (word.size()) {
-         case 0:
+       if ((word.size() == 1 && word[0] == '-') || (word[0] == '-' && word[1] == '-')) {
             return false;
-             break;
-            case 1:
-                if (word[0] == '-') {
-                    return false;
-                } 
-                break;
-            default:
-                if ((word[0] == '-') && (word[1] == '-')) {
-                    return false;
-                } 
-                break;
         }
-        return true;    
+            return true;
     }
 };
