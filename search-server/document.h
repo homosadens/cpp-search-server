@@ -1,6 +1,8 @@
 //Вставьте сюда своё решение из урока «Очередь запросов» темы «Стек, очередь, дек».‎
 #pragma once
 
+const int MAX_RESULT_DOCUMENT_COUNT = 5;
+
 struct Document {
     Document() = default;
 
